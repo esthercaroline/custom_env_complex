@@ -34,8 +34,16 @@ elif sys.argv[1] in ['test', 'run']:
 mode = sys.argv[1]
 DIM = int(sys.argv[2]) # 5, 10, 20
 OBSTACLES = int(sys.argv[3]) # 3, 12, 48
-MAX_STEPS = int(sys.argv[4]) # 200, 500, 1000
-TOTAL_TIMESTEPS = int(sys.argv[5]) # 500_000
+
+if mode in ['train', 'curriculum']:
+    MAX_STEPS = int(sys.argv[4]) # 200, 500, 1000
+    TOTAL_TIMESTEPS = int(sys.argv[5]) # 500_000
+else:
+    # test / run: derive a sensible default cap on episode length from the grid size
+    # so the agent has enough steps to attempt full coverage. Same heuristic used during training.
+    MAX_STEPS = 200 if DIM <= 5 else 400 if DIM <= 10 else 800
+    TOTAL_TIMESTEPS = 0  # unused in test/run
+
 ENTROPY_COEF = 0.05
 # -----------------------
 
