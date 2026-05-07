@@ -36,9 +36,11 @@ class GridWorldCPPEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
     def __init__(self, render_mode=None, size: int = 5, obs_quantity: int = 3,
-                 max_steps: int = 200, view_size: int = 7):
-        assert view_size % 2 == 1 and view_size >= 3, (
-            f"view_size must be an odd integer >= 3, got {view_size}"
+                 max_steps: int = 200, view_size: int = 5):
+        # APS rules cap the egocentric view at 3x3 or 5x5; default to 5x5
+        # (the largest allowed) for the most local information.
+        assert view_size in (3, 5), (
+            f"view_size must be 3 or 5 per APS rules, got {view_size}"
         )
         self.size = size
         self.window_size = 512

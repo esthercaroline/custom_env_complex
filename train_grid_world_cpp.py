@@ -86,11 +86,11 @@ if mode == 'train':
 elif mode == 'curriculum':
 
     print("--- Starting CPP Curriculum Learning Training ---")
-    
-    model_name = input("Enter model filename (e.g., ppo_cpp_5_3_200_0.05_20260324_100000): ")
-    model_path = f'data/{model_name}.zip'
 
-    env = gym.make(        
+    model_name = input("Enter source model filename (e.g., ppo_cpp_5_3_200_0.05_20260324_100000): ")
+    source_model_path = f'data/{model_name}.zip'
+
+    env = gym.make(
         "gymnasium_env/GridWorldCPP-v0",
         size=DIM,
         obs_quantity=OBSTACLES,
@@ -98,27 +98,22 @@ elif mode == 'curriculum':
         render_mode="rgb_array"
     )
 
-    # Carrega os pesos do modelo 5x5 e associa ao novo ambiente
-    model = PPO.load(
-        model_path,
-        env=env,
-        device="cpu"
-    )
-
-    # Continua o treinamento com os pesos já inicializados
-    model.learn(total_timesteps=MAX_STEPS, reset_num_timesteps=False)
+    # Load the previously trained policy onto the new (larger) env. The 7x7
+    # local view + normalized agent vector make the observation space identical
+    # across grid sizes, so the loaded weights are directly compatible.
+    model = PPO.load(source_model_path, env=env, device="cpu")
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_dir = f'log/ppo_cpp_{DIM}_{OBSTACLES}_{MAX_STEPS}_{ENTROPY_COEF}_{timestamp}_curriculum'
-    model_path = f'data/ppo_cpp_{DIM}_{OBSTACLES}_{MAX_STEPS}_{ENTROPY_COEF}_{timestamp}_curriculum.zip'
+    new_model_path = f'data/ppo_cpp_{DIM}_{OBSTACLES}_{MAX_STEPS}_{ENTROPY_COEF}_{timestamp}_curriculum.zip'
 
     new_logger = configure(log_dir, ["stdout", "csv", "tensorboard"])
     model.set_logger(new_logger)
 
-    print(f"Starting learning with {TOTAL_TIMESTEPS} timesteps...")
-    model.learn(total_timesteps=TOTAL_TIMESTEPS)
-    model.save(model_path)
-    print(f"Model trained and saved to {model_path}")
+    print(f"Continuing learning for {TOTAL_TIMESTEPS} timesteps (reset_num_timesteps=False)...")
+    model.learn(total_timesteps=TOTAL_TIMESTEPS, reset_num_timesteps=False)
+    model.save(new_model_path)
+    print(f"Model trained and saved to {new_model_path}")
     print(f"Logs saved to {log_dir}")
 
 elif mode == 'run':
